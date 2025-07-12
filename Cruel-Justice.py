@@ -153,7 +153,7 @@ with st.sidebar:
 with st.container():
     col1, col2 = st.columns([1, 4])
     with col1:
-        st.image("https://judgeai.cloud/images/homepage_2.webp", width=100)
+        st.image("https://judgeai.cloud/images/homepage_2.webp", width=20)
     with col2:
         st.markdown("""
         <div class="header-box">
