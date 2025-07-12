@@ -10,12 +10,6 @@ import google.generativeai as genai
 # --- APP CONFIG AND THEME ---
 st.set_page_config(page_title="Cruel Justice - Advanced Analysis", layout="wide")
 
-# --- LOTTIE ANIMATION FUNCTION ---
-def load_lottieurl(url: str):
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
 
 # --- TTS FUNCTION ---
 def speak_text(text):
@@ -156,11 +150,10 @@ with st.sidebar:
     mode = st.radio("Choose Mode:", ["Explore Famous Cases", "AI Case Generator"])
 
 
-# --- HEADER ---
 with st.container():
     col1, col2 = st.columns([1, 4])
     with col1:
-        st.image("https://cdn-icons-png.flaticon.com/512/2122/2122709.png", width=150) # The law logo image
+        st.image("https://judgeai.cloud/images/homepage_2.webp", width=500)
     with col2:
         st.markdown("""
         <div class="header-box">
