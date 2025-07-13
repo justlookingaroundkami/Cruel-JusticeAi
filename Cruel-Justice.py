@@ -165,36 +165,17 @@ with st.container():
 if mode == "Explore Famous Cases":
     st.header("📁 Select a Famous Criminal Case")
     case_option = st.selectbox("Choose a case:", [
-        "Ted Bundy Case",
-        "Arushi Talwar Case",
-        "Jessica Lal Murder Case",
-        "Sheena Bora Murder Case",
-        "O.J. Simpson Case"
+        "Aarushi Talwar Case",
+    "Bhima Koregaon Case",
+    "George Floyd Case",
+    "Jessica Lal Murder Case",
+    "Adnan Syed Case"
     ], label_visibility="collapsed")
 
     case_data = {} # This will be populated based on selection
 
     # --- CASE DATA DICTIONARY ---
-    cases = {
-        "Ted Bundy Case": {
-            "name": "The Case of Ted Bundy",
-            "timeline": [
-                "<strong>1974-1978:</strong> Carries out a multi-state crime spree, murdering at least 30 young women and girls.",
-                "<strong>1975 (August):</strong> First arrested in Utah for aggravated kidnapping and attempted criminal assault.",
-                "<strong>1977 (June):</strong> Escapes from custody in Aspen, Colorado. Recaptured after 6 days.",
-                "<strong>1977 (December):</strong> Escapes again from a jail in Glenwood Springs, Colorado.",
-                "<strong>1978 (January):</strong> Murders two students at the Chi Omega sorority house in Florida.",
-                "<strong>1978 (February):</strong> Abducts and murders 12-year-old Kimberly Leach. Arrested for the final time.",
-                "<strong>1979 (July):</strong> Convicted for the Chi Omega murders and sentenced to death.",
-                "<strong>1989 (January):</strong> Executed in Florida's electric chair after confessing to dozens of murders."
-            ],
-            "summary": "Ted Bundy was a charismatic American serial killer who kidnapped, raped, and murdered numerous young women and girls during the 1970s. He used his charm to gain victims' trust. His case gained notoriety for his two dramatic prison escapes and his decision to act as his own attorney, turning his trials into a media spectacle.",
-            "verdict": "Convicted of three counts of first-degree murder, attempted murder, kidnapping, and burglary. He received three death sentences.",
-            "laws": "First-Degree Murder (Florida Statutes), Aggravated Kidnapping (Utah Code), Burglary, Attempted Criminal Assault",
-            "real_outcome": "Bundy was executed on January 24, 1989. His case profoundly impacted law enforcement, leading to a greater understanding of serial killer psychology and the development of the FBI's Behavioral Science Unit.",
-            "ai_opinion": "The Ted Bundy case is a chilling study in the duality of human nature, where a facade of normalcy can mask extreme psychopathy. It highlights the critical importance of inter-state law enforcement communication and the value of behavioral science in criminal profiling. The case serves as a stark reminder of the manipulative capabilities of such offenders."
-        },
-"Arushi Talwar Case": {
+    cases = {"Arushi Talwar Case": {
     "name": "Aarushi Talwar Case",
     "timeline": [
            "<strong>2008 (May 16):</strong> 14-year-old Aarushi Talwar found murdered in her bedroom in Noida, India.",
@@ -208,10 +189,69 @@ if mode == "Explore Famous Cases":
     "real_outcome": "The parents were acquitted, but the 'benefit of doubt' verdict meant the murders remain officially unsolved, leaving a cloud of mystery and public debate.",
     "ai_opinion": "This case exposed significant systemic flaws in forensic investigation, crime scene management, and the detrimental influence of a 'media trial'. AI emphasizes the critical need for meticulous, unbiased police work, free from external pressures, to ensure justice is not compromised by procedural failures."
 },
+  {
+    "Bhima Koregaon Case": {
+        "name": "Bhima Koregaon Arrests",
+        "timeline": [
+            "<strong>2018 (January 1):</strong> Violence erupts during the annual commemoration of the 1818 Bhima Koregaon battle.",
+            "<strong>2018 (June-August):</strong> Activists and intellectuals are arrested under the Unlawful Activities (Prevention) Act (UAPA).",
+            "<strong>2019-2023:</strong> Multiple accused, including academics and lawyers, remain in jail for years without formal trial.",
+            "<strong>2022:</strong> Accused Stan Swamy dies in custody due to lack of medical care.",
+            "<strong>2023-2024:</strong> Courts begin to grant bail citing lack of strong evidence."
+        ],
+        "summary": "Several activists were accused of plotting to overthrow the Indian government, allegedly linked to Maoist groups. However, investigations and independent reports raised questions about the authenticity of digital evidence and political motivations behind the arrests.",
+        "verdict": "No final verdict. Most of the accused spent years in jail under trial without conviction.",
+        "laws": "UAPA (Unlawful Activities Prevention Act), IPC Sections 124A (Sedition), 120B (Criminal Conspiracy)",
+        "real_outcome": "The case is still under trial, but it has raised serious concerns about misuse of anti-terror laws to suppress dissent.",
+        "ai_opinion": "This case reflects how broad and vague anti-terror laws can be weaponized to silence critics. The prolonged pre-trial detention without clear evidence undermines constitutional rights and the presumption of innocence."
+    },
 
-        # ... (other cases would be formatted similarly)
+    "George Floyd Case": {
+        "name": "George Floyd Murder and Trial of Derek Chauvin",
+        "timeline": [
+            "<strong>2020 (May 25):</strong> George Floyd, an unarmed Black man, is killed by police officer Derek Chauvin in Minneapolis.",
+            "<strong>2020 (May-June):</strong> Protests erupt across the US and globally under the #BlackLivesMatter movement.",
+            "<strong>2021 (April):</strong> Chauvin is found guilty of murder and manslaughter.",
+            "<strong>2021 (June):</strong> Chauvin sentenced to 22.5 years in prison."
+        ],
+        "summary": "The killing of George Floyd highlighted systemic racism and police brutality in the United States. Though Chauvin was eventually convicted, the incident drew attention to decades of racially biased policing practices.",
+        "verdict": "Chauvin was convicted on all counts, including second-degree unintentional murder.",
+        "laws": "US Code Title 18: Civil Rights Violations, Second-Degree Murder (Minnesota)",
+        "real_outcome": "The case led to some police reform discussions and global protests, though many argue deeper change is still needed.",
+        "ai_opinion": "While justice was served in this individual case, it exposed systemic racial inequality within law enforcement. True justice would require systemic change, not just convictions in high-profile cases."
+    },
+
+    "Jessica Lal Murder Case": {
+        "name": "Jessica Lal Murder Case",
+        "timeline": [
+            "<strong>1999 (April):</strong> Jessica Lal is shot dead at a party in Delhi by Manu Sharma, son of a powerful politician.",
+            "<strong>2006:</strong> After public outcry and media campaigns, the Delhi High Court reverses the initial acquittal and convicts Sharma.",
+            "<strong>2010:</strong> Supreme Court upholds conviction. Sharma is sentenced to life imprisonment.",
+            "<strong>2020:</strong> Sharma is released early citing “good behavior.”"
+        ],
+        "summary": "The murder of model Jessica Lal in front of dozens of witnesses initially resulted in acquittal due to witnesses turning hostile. A media campaign helped reopen the case. Bias from power, privilege, and money was evident.",
+        "verdict": "Eventually convicted and sentenced to life imprisonment after retrial.",
+        "laws": "IPC Section 302 (Murder), IPC Section 201 (Destruction of Evidence)",
+        "real_outcome": "Sharma was released in 2020 after serving part of his life sentence. The case exposed how power and political connections can influence early investigations and court outcomes.",
+        "ai_opinion": "The initial acquittal exposed how wealth and political power can obstruct justice. While later public pressure helped correct it, justice shouldn't require media intervention."
+    },
+
+    "Adnan Syed Case": {
+        "name": "Adnan Syed / Serial Podcast Case",
+        "timeline": [
+            "<strong>1999:</strong> Hae Min Lee is found murdered in Baltimore. Her ex-boyfriend Adnan Syed is arrested.",
+            "<strong>2000:</strong> Syed is convicted based on a single witness and inconsistent phone records.",
+            "<strong>2014:</strong> Case gains attention through the hit podcast *Serial*.",
+            "<strong>2016-2022:</strong> Multiple appeals are filed citing ineffective legal counsel and unreliable evidence.",
+            "<strong>2022:</strong> Conviction is vacated. Syed is released from prison after 23 years."
+        ],
+        "summary": "Adnan Syed was convicted largely on circumstantial evidence. Years later, investigations revealed poor defense representation and weak forensic evidence. Media attention helped reopen the case.",
+        "verdict": "Conviction vacated in 2022 due to prosecutorial issues and unreliable evidence.",
+        "laws": "Maryland Criminal Code: First-degree murder, obstruction of justice",
+        "real_outcome": "Syed’s release reignited conversations about wrongful convictions and the power of media in justice.",
+        "ai_opinion": "This case exemplifies how procedural failures and poor legal defense can result in wrongful imprisonment. Media can be a double-edged sword—sometimes correcting injustice, other times distorting perception."
     }
-    # Add other cases here in the same format...
+}
     case_data = cases.get(case_option) # Safely get the selected case data
 
     # --- DISPLAY STRUCTURED CASE ---
