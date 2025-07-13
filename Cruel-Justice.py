@@ -175,7 +175,8 @@ if mode == "Explore Famous Cases":
     case_data = {} # This will be populated based on selection
 
     # --- CASE DATA DICTIONARY ---
-    cases = {"Arushi Talwar Case": {
+    cases = { 
+          "Aarushi Talwar Case": {
     "name": "Aarushi Talwar Case",
     "timeline": [
            "<strong>2008 (May 16):</strong> 14-year-old Aarushi Talwar found murdered in her bedroom in Noida, India.",
@@ -189,7 +190,6 @@ if mode == "Explore Famous Cases":
     "real_outcome": "The parents were acquitted, but the 'benefit of doubt' verdict meant the murders remain officially unsolved, leaving a cloud of mystery and public debate.",
     "ai_opinion": "This case exposed significant systemic flaws in forensic investigation, crime scene management, and the detrimental influence of a 'media trial'. AI emphasizes the critical need for meticulous, unbiased police work, free from external pressures, to ensure justice is not compromised by procedural failures."
 },
-  {
     "Bhima Koregaon Case": {
         "name": "Bhima Koregaon Arrests",
         "timeline": [
