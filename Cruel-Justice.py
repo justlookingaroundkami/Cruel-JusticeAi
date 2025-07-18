@@ -5,6 +5,52 @@ from gtts import gTTS
 import openai as OPENAI 
 
 st.set_page_config(page_title="Cruel Justice", layout="wide")
+# --- RESPONSIVE CSS ---
+st.markdown("""
+<style>
+/* General mobile responsiveness */
+@media (max-width: 768px) {
+  .crime-scene-banner {
+    height: 250px !important;
+  }
+  .crime-scene-content img {
+    width: 80px !important;
+  }
+  .hero-text h1 {
+    font-size: 2.5em !important;
+  }
+  .police-tape, .blood-splatter {
+    display: none; /* Hide complex elements on mobile */
+  }
+}
+
+/* Flashlight fallback for mobile: softer spotlight */
+@media (pointer: coarse) {
+  .flashlight {
+    opacity: 0.6 !important;
+    width: 200px !important;
+    height: 200px !important;
+  }
+}
+</style>
+""", unsafe_allow_html=True)
+
+# --- MOBILE MODE TOGGLE ---
+mobile_preview = st.sidebar.checkbox("📱 Mobile Mode Preview")
+
+# --- CRIME BANNER with spotlight ---
+st.markdown(f"""
+<div class="crime-scene-banner" onmousemove="moveSpot(event)" style="{'max-width:400px;br overflow:hidden;' if mobile_preview else ''}">
+  <!-- existing banner HTML... -->
+</div>
+<script>
+const f = document.getElementById('flashlight');
+function moveSpot(e) {{
+  const r = e.currentTarget.getBoundingClientRect();
+  f.style.transform = `translate(${e.clientX- r.left - ({'100' if mobile_preview else '125'})}px, ${e.clientY - r.top - ( {'100' if mobile_preview else '125'})}px)`;
+}}
+</script>
+""", unsafe_allow_html=True)
 
 def speak_text(text):
     try:
