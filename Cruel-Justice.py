@@ -507,19 +507,22 @@ elif selected_page == "🎭 Imaginary Case Creator":
 elif selected_page == "🤖 AI Case Generator":
     st.header("🤖 AI Case Analyzer")
     st.markdown("Paste or upload a case summary. AI will analyze it.")
+
     input_method = st.radio("Choose input:", ["Text", "Upload File"], key="ai_method")
     case_text = ""
+
     if input_method == "Text":
         case_text = st.text_area("Paste case details here:")
     else:
         uploaded = st.file_uploader("Upload .txt file", type="txt")
         if uploaded:
             case_text = uploaded.read().decode("utf-8")
+
     if case_text and OPENAI_API_KEY:
-    if st.button("🔍 Analyze Case"):
-        with st.spinner("Analyzing..."):
-            try:
-                prompt = f"""You are a legal judge AI. Analyze the case with these headings:
+        if st.button("🔍 Analyze Case"):
+            with st.spinner("Analyzing..."):
+                try:
+                    prompt = f"""You are a legal judge AI. Analyze the case with these headings:
 ## Summary:
 ## Timeline:
 ## Laws:
@@ -531,20 +534,19 @@ elif selected_page == "🤖 AI Case Generator":
 Case Details:
 {case_text}
 """
-                resp = OPENAI.ChatCompletion.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You are a legal AI."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-                analysis = resp.choices[0].message.content
-                st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
+                    resp = OPENAI.ChatCompletion.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are a legal AI."},
+                            {"role": "user", "content": prompt}
+                        ]
+                    )
+                    analysis = resp.choices[0].message.content
+                    st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
 
-                if st.button("▶️ Listen to Analysis"):
-                    speak_text(analysis)
+                    if st.button("▶️ Listen to Analysis"):
+                        speak_text(analysis)
 
-            except Exception as e:
-                st.error("❌ AI analysis failed")
-                st.code(str(e))
-
+                except Exception as e:
+                    st.error("❌ AI analysis failed")
+                    st.code(str(e))
