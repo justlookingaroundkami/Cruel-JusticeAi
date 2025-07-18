@@ -147,7 +147,7 @@ st.markdown("""
 <div class="crime-scene-banner" onmousemove="moveSpot(event)">
   <div class="police-tape"></div>
   <img class="blood-splatter splatter1"
-       src="https://i.imgur.com/9o0D1ty.png">
+       src="https://www.pngmart.com/files/21/Blood-Splatter-PNG-Transparent-Image.png">
   <img class="blood-splatter splatter2"
        src="https://i.imgur.com/p2P70qT.png">
   <div id="flashlight" class="flashlight"></div>
