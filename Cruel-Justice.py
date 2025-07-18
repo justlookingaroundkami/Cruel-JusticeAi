@@ -523,7 +523,7 @@ elif selected_page == "🤖 AI Case Generator":
             with st.spinner("Analyzing..."):
                 try:
                     from openai import OpenAI
-                    client = OpenAI(api_key=st.secrets["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"],
+                    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"],
                              organization=st.secrets["org-CKtJUSImO1mGsSpJKFmxW6rZ"]
                                                     )
 
