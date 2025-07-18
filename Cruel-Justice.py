@@ -2,26 +2,89 @@ import streamlit as st
 import base64
 from tempfile import NamedTemporaryFile
 from gtts import gTTS
-import openai as OPENAI 
+import openai as OPENAI
 
 st.set_page_config(page_title="Cruel Justice", layout="wide")
+
+# --- SPEAK HELPER ---
+def speak_text(text):
+    try:
+        tts = gTTS(text)
+        with NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
+            tts.save(fp.name)
+        audio_bytes = open(fp.name, "rb").read()
+        b64 = base64.b64encode(audio_bytes).decode()
+        st.markdown(f"""
+            <audio controls autoplay>
+              <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
+            </audio>""", unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"Audio play failed: {e}")
+
+# --- CRIME SCENE BANNER (only once) ---
 st.markdown("""
 <style>
-@media (max-width: 768px) {
+  /* Responsive tweaks for mobile */
+  @media (max-width: 768px) {
+    .crime-scene-banner { height: 240px !important; }
+    .crime-scene-content img { width: 90px !important; }
+    .hero-text h1 { font-size: 2.4em !important; }
+    .police-tape, .blood-splatter { display: none; }
+  }
+  /* Banner styling */
   .crime-scene-banner {
-    height: 240px !important;
-    background-size: cover;
+    position: relative;
+    background: url('https://images.unsplash.com/photo-1589385554083-91d4e1a1f09f?...') center/cover no-repeat;
+    height: 340px; border-radius:12px; overflow:hidden;
+    margin:2em 0;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 6px 30px rgba(0,0,0,0.9);
+  }
+  .crime-scene-banner::after {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(circle at center, rgba(0,0,0,0.4), rgba(0,0,0,0.9));
+  }
+  .flashlight {
+    position:absolute; pointer-events:none;
+    width:250px; height:250px;
+    background: radial-gradient(circle at center, rgba(0,0,0,0), rgba(0,0,0,0.85) 60%);
+    border-radius:50%; mix-blend-mode:destination-out;
+    opacity:0.95; transition:transform 0.1s;
+  }
+  .crime-scene-content {
+    position:relative; display:flex; align-items:center;
+    gap:1.5em; height:100%; padding:1em 3em;
   }
   .crime-scene-content img {
-    width: 90px !important;
+    width:140px; border:4px solid #facc15;
+    border-radius:12px; box-shadow:0 0 40px crimson;
+    filter:brightness(1.3); transform:rotate(-2deg);
+    transition:transform 0.2s;
+  }
+  .crime-scene-content img:hover {
+    transform:rotate(0deg) scale(1.1);
   }
   .hero-text h1 {
-    font-size: 2.4em !important;
+    font-family:'VT323', monospace; font-size:5em;
+    color:#ff4c4c; margin:0;
+    text-shadow:4px 4px #220000;
+    filter: brightness(1.4);
   }
-  .police-tape, .blood-splatter {
-    display: none;
+  .hero-text p {
+    font-size:1.4em; color:#f1f5f9; filter: brightness(1.2);
+    margin-top:0.3em;
   }
-}
+  .police-tape {
+    position:absolute; top:23%; left:-18%;
+    width:160%; height:50px;
+    background: repeating-linear-gradient(-45deg, #facc15,#facc15 20px,#000 20px,#000 40px);
+    opacity:0.88; transform:rotate(-10deg);
+    box-shadow:0 0 14px rgba(0,0,0,0.7);
+  }
+  .blood-splatter {
+    position:absolute; opacity:0.9;
+  }
+  .splatter1 { bottom:-20px; right:-40px; width:220px; transform:rotate(-15deg); }
+  .splatter2 { top:30px; left:10px; width:180px; transform:rotate(25deg); }
 </style>
 
 <div class="crime-scene-banner" id="crimeBanner">
@@ -30,7 +93,7 @@ st.markdown("""
   <img class="blood-splatter splatter2" src="https://i.imgur.com/p2P70qT.png">
   <div id="flashlight" class="flashlight"></div>
   <div class="crime-scene-content">
-    <img src="https://judgeai.cloud/images/homepage_2.webp" alt="Logo">
+    <img src="https://judgeai.cloud/images/homepage_2.webp" alt="Cruel Justice Logo">
     <div class="hero-text">
       <h1>Cruel Justice</h1>
       <p>Uncover the Truth. Judge the Invisible.</p>
@@ -42,182 +105,73 @@ st.markdown("""
 const f = document.getElementById('flashlight');
 document.getElementById('crimeBanner').addEventListener('mousemove', function(e) {
   const r = this.getBoundingClientRect();
-  const x = e.clientX - r.left - 125;
-  const y = e.clientY - r.top - 125;
-  f.style.transform = `translate(${x}px, ${y}px)`;
+  f.style.transform = `translate(${e.clientX - r.left - 125}px, ${e.clientY - r.top - 125}px)`;
 });
-</script>
-""", unsafe_allow_html=True)
-
-
-def speak_text(text):
-    try:
-        tts = gTTS(text)
-        with NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
-            tts.save(fp.name)
-        audio_bytes = open(fp.name, "rb").read()
-        b64 = base64.b64encode(audio_bytes).decode()
-        st.markdown(f"""<audio controls autoplay>
-                           <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
-                        </audio>""",
-                    unsafe_allow_html=True)
-    except Exception as e:
-        st.warning(f"Audio play failed: {e}")
-
-
-def set_page_style(css):
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-
-# --- GLOBAL STYLES (including glass, timeline, crime banner) ---
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
-      rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-<style>
-    body, .stApp {
-        background: #111; color: #eee;
-        font-family: 'Roboto', sans-serif;
-    }
-    .stSidebar > div {
-        background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 100%);
-        backdrop-filter: blur(10px); border-right:1px solid rgba(0,0,0,0.1); color:#333;
-    }
-    .stSidebar h1, .stSidebar h2 {
-        color: #0f172a !important;
-    }
-    .stSidebar .stRadio label span { color: #333 !important; }
-
-    .crime-scene-banner {
-        position: relative;
-        background: url('https://images.unsplash.com/photo-1589385554083-91d4e1a1f09f?...') center/cover no-repeat;
-        height: 340px; border-radius: 12px; overflow: hidden;
-        margin: 2em 0;
-        box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 6px 30px rgba(0,0,0,0.9);
-    }
-    .crime-scene-banner::after {
-        content: '';
-        position: absolute; inset: 0;
-        background: radial-gradient(circle at center, rgba(0,0,0,0.4), rgba(0,0,0,0.9));
-    }
-    .flashlight {
-        position: absolute; pointer-events: none;
-        width:250px; height:250px;
-        background: radial-gradient(circle at center, rgba(0,0,0,0), rgba(0,0,0,0.85) 60%);
-        border-radius:50%; mix-blend-mode: destination-out;
-        opacity:0.95; transition: transform 0.1s;
-    }
-    .crime-scene-content {
-        position: relative; display: flex; align-items: center;
-        gap: 1.5em; height: 100%; padding:1em 3em;
-    }
-    .crime-scene-content img {
-        width: 140px; border: 4px solid #facc15;
-        border-radius: 12px;
-        box-shadow: 0 0 40px crimson;
-        filter: brightness(1.3);
-        transform: rotate(-2deg);
-        transition: transform 0.2s;
-    }
-    .crime-scene-content img:hover {
-        transform: rotate(0deg) scale(1.1);
-    }
-    .hero-text h1 {
-        font-family: 'VT323', monospace; font-size: 5em;
-        color: #ff4c4c; margin: 0;
-        text-shadow: 4px 4px #220000;
-        filter: brightness(1.4);
-    }
-    .hero-text p {
-        font-size:1.4em; color:#f1f5f9; filter: brightness(1.2);
-        margin-top:0.3em;
-    }
-    .police-tape {
-        position:absolute; top:23%; left:-18%;
-        width:160%; height:50px;
-        background: repeating-linear-gradient(-45deg,
-            #facc15,#facc15 20px,#000 20px,#000 40px);
-        opacity:0.88;
-        transform: rotate(-10deg);
-        box-shadow: 0 0 14px rgba(0,0,0,0.7);
-    }
-    .blood-splatter {
-        position:absolute; opacity:0.9;
-    }
-    .splatter1 { bottom:-20px; right:-40px; width:220px; transform:rotate(-15deg); }
-    .splatter2 { top:30px; left:10px; width:180px; transform:rotate(25deg); }
-
-    .header-box h1 {
-        font-size: 3.5em; color: #facc15; letter-spacing: 2px;
-        text-align:center; padding:1em 0;
-    }
-
-    .glass-container {
-        background: rgba(30,41,59,0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 1.5em;
-        border:1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.37);
-        margin-bottom:1em;
-    }
-
-    .timeline-container {
-        border-left: 3px solid #38bdf8;
-        padding: 1em 2em; position: relative; list-style: none;
-    }
-    .timeline-item {
-        margin-bottom: 2em; position: relative;
-    }
-    .timeline-item:before {
-        content: '';
-        background-color: #facc15;
-        border: 3px solid #38bdf8;
-        border-radius: 50%;
-        width:20px; height:20px;
-        position: absolute; left: -33px; top: 0;
-    }
-    .timeline-item-content {
-        background: rgba(45,55,72,0.7);
-        color:#fff;
-        padding:1em;
-        border-radius:8px;
-    }
-    .timeline-item-content strong {
-        color:#facc15; font-weight:700;
-    }
-</style>
-
-<div class="crime-scene-banner" onmousemove="moveSpot(event)">
-  <div class="police-tape"></div>
-  <img class="blood-splatter splatter1"
-       src="https://static.vecteezy.com/system/resources/previews/033/172/459/original/blood-splatter-isolated-background-free-png.png">
-  <img class="blood-splatter splatter2"
-      src="https://static.vecteezy.com/system/resources/previews/033/172/459/original/blood-splatter-isolated-background-free-png.png">
-  <div id="flashlight" class="flashlight"></div>
-  <div class="crime-scene-content">
-    <img src="https://judgeai.cloud/images/homepage_2.webp"
-         alt="Cruel Justice Logo">
-    <div class="hero-text">
-      <h1>Cruel Justice</h1>
-      <p>Uncover the Truth. Judge the Invisible.</p>
-    </div>
-  </div>
-</div>
-
-<script>
-const f = document.getElementById('flashlight');
-function moveSpot(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    f.style.transform = `translate(${e.clientX-rect.left-125}px, ${e.clientY-rect.top-125}px)`;
-}
 </script>
 
 <audio autoplay loop hidden>
-  <source src="https://cdn.pixabay.com/audio/2023/03/04/audio_2d93c0c328.mp3"
-          type="audio/mpeg">
+  <source src="https://cdn.pixabay.com/audio/2023/03/04/audio_2d93c0c328.mp3" type="audio/mpeg">
 </audio>
 """, unsafe_allow_html=True)
+
+# --- GLOBAL STYLES (glass boxes, timeline, fonts) ---
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  body, .stApp { background:#111; color:#eee; font-family:'Roboto',sans-serif; }
+  .stSidebar > div {
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,240,240,0.95));
+    backdrop-filter:blur(10px); color:#333;
+  }
+  .stSidebar h1, .stSidebar h2, .stSidebar .stRadio label span {
+    color:#0f172a !important;
+  }
+  .header-box h1 { font-size:3.5em; color:#facc15; text-align:center; padding:1em 0; }
+
+  .glass-container {
+    background:rgba(30,41,59,0.5);
+    backdrop-filter:blur(10px);
+    border-radius:15px;
+    padding:1.5em;
+    box-shadow:0 8px 32px rgba(0,0,0,0.37);
+    margin-bottom:1em;
+  }
+
+  .timeline-container {
+    border-left:3px solid #38bdf8;
+    padding:1em 2em;
+    list-style:none;
+  }
+  .timeline-item { margin-bottom:2em; }
+  .timeline-item:before {
+    content:''; background-color:#facc15;
+    border:3px solid #38bdf8;
+    border-radius:50%;
+    width:20px;height:20px;
+    position:absolute; left:-33px; top:0;
+  }
+  .timeline-item-content {
+    background:rgba(45,55,72,0.7);
+    color:#fff; padding:1em; border-radius:8px;
+  }
+  .timeline-item-content strong { color:#facc15; font-weight:700; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- SIDEBAR: OpenAI key + navigation ---
+with st.sidebar:
+    st.header("🔐 API Setup")
+    OPENAI_API_KEY = st.text_input("Enter OpenAI API Key", type="password")
+    if OPENAI_API_KEY:
+        OPENAI.api_key = OPENAI_API_KEY
+
+    st.header("🧭 Navigation")
+    selected_page = st.radio(
+        "Choose Mode:",
+        ["🏠 Home", "📂 Explore Famous Cases", "🎭 Imaginary Case Creator", "🤖 AI Case Generator"],
+        key="nav_mode"
+    )
 
 # Sidebar (OpenAI key + navigation)
 with st.sidebar:
