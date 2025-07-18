@@ -523,7 +523,7 @@ elif selected_page == "🤖 AI Case Generator":
             with st.spinner("Analyzing..."):
                 try:
                     from openai import OpenAI
-                    client = OpenAI(api_key=OPENAI_API_KEY)
+                    client = OpenAI(api_key="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")
 
                     prompt = f"""You are a legal judge AI. Analyze the case with these headings:
 ## Summary:
