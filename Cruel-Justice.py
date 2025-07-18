@@ -534,14 +534,18 @@ elif selected_page == "🤖 AI Case Generator":
 Case Details:
 {case_text}
 """
-                    resp = OPENAI.ChatCompletion.create(
-                        model="gpt-4",
-                        messages=[
-                            {"role": "system", "content": "You are a legal AI."},
-                            {"role": "user", "content": prompt}
-                        ]
-                    )
-                    analysis = resp.choices[0].message.content
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "You are a legal AI."},
+        {"role": "user", "content": prompt}
+    ]
+)
+
+analysis = response.choices[0].message.content
+
                     st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
 
                     if st.button("▶️ Listen to Analysis"):
