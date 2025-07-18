@@ -518,7 +518,7 @@ elif selected_page == "🤖 AI Case Generator":
         if uploaded:
             case_text = uploaded.read().decode("utf-8")
 
-        if case_text and OPENAI_API_KEY:
+    if case_text and OPENAI_API_KEY:
         if st.button("🔍 Analyze Case"):
             with st.spinner("Analyzing..."):
                 try:
