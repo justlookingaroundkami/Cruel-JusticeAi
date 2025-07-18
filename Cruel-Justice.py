@@ -149,7 +149,7 @@ st.markdown("""
   <img class="blood-splatter splatter1"
        src="https://www.pngmart.com/files/21/Blood-Splatter-PNG-Transparent-Image.png">
   <img class="blood-splatter splatter2"
-       src="https://images.vexels.com/media/users/3/151808/isolated/preview/d76ad3f38e57f5c6b275dcb1fd9c4369-isolated-blood-splatter-by-vexels.png">
+       src="https://www.pngmart.com/files/21/Blood-Splatter-PNG-Transparent-Image.png">
   <div id="flashlight" class="flashlight"></div>
   <div class="crime-scene-content">
     <img src="https://judgeai.cloud/images/homepage_2.webp"
