@@ -505,10 +505,19 @@ elif selected_page == "🎭 Imaginary Case Creator":
 
 # -------------------- PAGE: AI GENERATOR --------------------
 elif selected_page == "🤖 AI Case Generator":
+   import streamlit as st
+from openai import OpenAI
+
+# Ask user for API key (only once at the top of your file or sidebar)
+OPENAI_API_KEY = st.text_input("🔑 Enter your OpenAI API Key", type="password")
+
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
     st.header("🤖 AI Case Analyzer")
     st.markdown("Paste or upload a case summary. AI will analyze it.")
 
-    input_method = st.radio("Choose input:", ["Text", "Upload File"], key="ai_method")
+    input_method = st.radio("Choose input:", ["Text", "Upload File"])
     case_text = ""
 
     if input_method == "Text":
@@ -518,16 +527,11 @@ elif selected_page == "🤖 AI Case Generator":
         if uploaded:
             case_text = uploaded.read().decode("utf-8")
 
-    if case_text and OPENAI_API_KEY:
+    if case_text:
         if st.button("🔍 Analyze Case"):
             with st.spinner("Analyzing..."):
                 try:
-                    from openai import OpenAI
-                    OPENAI_API_KEY = st.text_input("Enter your OpenAI API key", type="password")
-                    if OPENAI_API_KEY:
-                      client = OpenAI(api_key=OPENAI_API_KEY)
-
-                    prompt = f"""You are a legal judge AI. Analyze the case with these headings:
+                    prompt = f"""You are a legal AI. Analyze this case with the following headers:
 ## Summary:
 ## Timeline:
 ## Laws:
@@ -535,23 +539,21 @@ elif selected_page == "🤖 AI Case Generator":
 ## Outcome:
 ## Ethical Insight:
 ## Recommendation:
-## Jail Time
+## Jail Time:
 Case Details:
 {case_text}
 """
                     response = client.chat.completions.create(
                         model="gpt-4",
                         messages=[
-                            {"role": "system", "content": "You are a legal AI."},
+                            {"role": "system", "content": "You are a legal expert AI."},
                             {"role": "user", "content": prompt}
                         ]
                     )
                     analysis = response.choices[0].message.content
                     st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
-
-                    if st.button("▶️ Listen to Analysis"):
-                        speak_text(analysis)
-
                 except Exception as e:
                     st.error("❌ AI analysis failed")
                     st.code(str(e))
+else:
+    st.warning("Please enter your OpenAI API Key above.")
