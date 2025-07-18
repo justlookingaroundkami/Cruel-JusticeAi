@@ -513,7 +513,7 @@ if "OPENAI_API_KEY" not in st.session_state:
     st.session_state.OPENAI_API_KEY = ""
 
 user_key = st.sidebar.text_input(
-    "🔑 OpenAI API Key",
+    " OpenAI API Key",
     type="password",
     value=st.session_state.OPENAI_API_KEY,
     key="input_key",
