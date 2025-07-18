@@ -516,10 +516,10 @@ elif selected_page == "🤖 AI Case Generator":
         if uploaded:
             case_text = uploaded.read().decode("utf-8")
     if case_text and OPENAI_API_KEY:
-        if st.button("🔍 Analyze Case"):
-            with st.spinner("Analyzing..."):
-                try:
-                    prompt = f"""You are a legal AI. Respond in markdown:
+    if st.button("🔍 Analyze Case"):
+        with st.spinner("Analyzing..."):
+            try:
+                prompt = f"""You are a legal judge AI. Analyze the case with these headings:
 ## Summary:
 ## Timeline:
 ## Laws:
@@ -527,22 +527,24 @@ elif selected_page == "🤖 AI Case Generator":
 ## Outcome:
 ## Ethical Insight:
 ## Recommendation:
-
+## Jail Time
 Case Details:
 {case_text}
 """
-                   resp = OPENAI.ChatCompletion.create(
-    model="gpt-4",
-    messages=[{"role": "system", "content": "You are a legal AI."},
-              {"role": "user", "content": prompt}]
-)
-analysis = resp.choices[0].message.content
+                resp = OPENAI.ChatCompletion.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a legal AI."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                analysis = resp.choices[0].message.content
+                st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
 
-                    st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
-                    if st.button("▶️ Listen to Analysis"):
-                        speak_text(analysis)
-                except Exception as e:
-                    st.error("AI analysis failed")
-                    st.code(str(e))
-    elif not OPENAI_API_KEY:
-        st.warning("Please enter your OpenAI API Key in the sidebar.")  
+                if st.button("▶️ Listen to Analysis"):
+                    speak_text(analysis)
+
+            except Exception as e:
+                st.error("❌ AI analysis failed")
+                st.code(str(e))
+
