@@ -5,52 +5,50 @@ from gtts import gTTS
 import openai as OPENAI 
 
 st.set_page_config(page_title="Cruel Justice", layout="wide")
-# --- RESPONSIVE CSS ---
 st.markdown("""
 <style>
-/* General mobile responsiveness */
 @media (max-width: 768px) {
   .crime-scene-banner {
-    height: 250px !important;
+    height: 240px !important;
+    background-size: cover;
   }
   .crime-scene-content img {
-    width: 80px !important;
+    width: 90px !important;
   }
   .hero-text h1 {
-    font-size: 2.5em !important;
+    font-size: 2.4em !important;
   }
   .police-tape, .blood-splatter {
-    display: none; /* Hide complex elements on mobile */
-  }
-}
-
-/* Flashlight fallback for mobile: softer spotlight */
-@media (pointer: coarse) {
-  .flashlight {
-    opacity: 0.6 !important;
-    width: 200px !important;
-    height: 200px !important;
+    display: none;
   }
 }
 </style>
-""", unsafe_allow_html=True)
 
-# --- MOBILE MODE TOGGLE ---
-mobile_preview = st.sidebar.checkbox("📱 Mobile Mode Preview")
-
-# --- CRIME BANNER with spotlight ---
-st.markdown(f"""
-<div class="crime-scene-banner" onmousemove="moveSpot(event)" style="{'max-width:400px;br overflow:hidden;' if mobile_preview else ''}">
-  <!-- existing banner HTML... -->
+<div class="crime-scene-banner" id="crimeBanner">
+  <div class="police-tape"></div>
+  <img class="blood-splatter splatter1" src="https://i.imgur.com/9o0D1ty.png">
+  <img class="blood-splatter splatter2" src="https://i.imgur.com/p2P70qT.png">
+  <div id="flashlight" class="flashlight"></div>
+  <div class="crime-scene-content">
+    <img src="https://judgeai.cloud/images/homepage_2.webp" alt="Logo">
+    <div class="hero-text">
+      <h1>Cruel Justice</h1>
+      <p>Uncover the Truth. Judge the Invisible.</p>
+    </div>
+  </div>
 </div>
+
 <script>
 const f = document.getElementById('flashlight');
-function moveSpot(e) {{
-  const r = e.currentTarget.getBoundingClientRect();
-  f.style.transform = `translate(${e.clientX- r.left - ({'100' if mobile_preview else '125'})}px, ${e.clientY - r.top - ( {'100' if mobile_preview else '125'})}px)`;
-}}
+document.getElementById('crimeBanner').addEventListener('mousemove', function(e) {
+  const r = this.getBoundingClientRect();
+  const x = e.clientX - r.left - 125;
+  const y = e.clientY - r.top - 125;
+  f.style.transform = `translate(${x}px, ${y}px)`;
+});
 </script>
 """, unsafe_allow_html=True)
+
 
 def speak_text(text):
     try:
