@@ -177,15 +177,10 @@ function moveSpot(e) {
 
 # --- SIDEBAR: OpenAI key + navigation ---
 with st.sidebar:
-    st.header("🔐 API Setup")
-    OPENAI_API_KEY = st.text_input("Enter OpenAI API Key", type="password")
-    if OPENAI_API_KEY:
-        OPENAI.api_key = OPENAI_API_KEY
-
     st.header("🧭 Navigation")
     selected_page = st.radio(
         "Choose Mode:",
-        ["🏠 Home", "📂 Explore Famous Cases", "🎭 Imaginary Case Creator", "🤖 AI Case Generator"],
+        ["🏠 Home", "📂 Explore Famous Cases", "🎭 Imaginary Case Creator", ],
         key="nav_mode"
     )
 
@@ -197,9 +192,6 @@ with st.sidebar:
 
     elif selected_page == "🎭 Imaginary Case Creator":
         st.title("🎭 Imaginary Case Creator")
-
-    elif selected_page == "🤖 AI Case Generator":
-        st.title("🤖 AI Case Generator")
 
 def set_page_style(css: str):
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
@@ -265,24 +257,6 @@ def set_page_background(page: str):
         backdrop-filter: blur(10px);
     }
     """)
-
-    elif selected_page == "🤖 AI Case Generator":
-     set_page_style("""
-    .stApp {
-        background: linear-gradient(130deg, #0a0f0a 0%, #1f2937 100%) !important;
-        color: #d1fae5 !important;
-    }
-    h1, h2, h3 {
-        color: #34d399 !important;
-    }
-    .glass-container {
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid rgba(52, 211, 153, 0.3);
-        border-radius: 12px;
-        backdrop-filter: blur(8px);
-    }
-    """)
-
 
 set_page_background(selected_page)
 
@@ -505,74 +479,40 @@ elif selected_page == "🎭 Imaginary Case Creator":
 
 # -------------------- PAGE: AI GENERATOR --------------------
 elif selected_page == "🤖 AI Case Generator":
-   import streamlit as st
-from openai import OpenAI
-
-# Ask user for API key (only once at the top of your file or sidebar)
-if "OPENAI_API_KEY" not in st.session_state:
-    st.session_state.OPENAI_API_KEY = ""
-
-user_key = st.sidebar.text_input(
-    " OpenAI API Key",
-    type="password",
-    value=st.session_state.OPENAI_API_KEY,
-    key="input_key",
-)
-
-if user_key:
-    st.session_state.OPENAI_API_KEY = user_key
-    client = OpenAI(api_key=user_key)
-else:
-    client = None
-
-# Sidebar navigation
-navigation = st.sidebar.radio("Navigate to", ["🏠 Home", "🤖 AI Case Generator"], key="nav")
-
-if navigation == "🤖 AI Case Generator":
-    st.header("🤖 AI Case Analyzer")
-    if not client:
-        st.warning("Please enter your OpenAI API key above to continue.")
-        st.stop()  # Prevent further code from running without valid key
-
-    # 2️⃣ Now input and analyze logic stays in one block
-    input_method = st.radio("Input type", ["Text", "File"], key="ai_input_method")
-    case_text = ""
-    if input_method == "Text":
-        case_text = st.text_area("Paste your case summary here")
-    else:
-        uploaded = st.file_uploader("Upload a .txt file", type="txt")
-        if uploaded:
-            case_text = uploaded.read().decode("utf-8")
-
-    if case_text:
-        if st.button("🔍 Analyze Case", key="analyze_button"):
+if case_text and OPENAI_API_KEY:
+        if st.button("🔍 Analyze Case"):
             with st.spinner("Analyzing..."):
                 try:
-                    prompt = f"""You are a legal AI. Provide output under these headings:
+                    from openai import OpenAI
+                    OPENAI_API_KEY = st.text_input("Enter your OpenAI API key", type="password")
+                    if OPENAI_API_KEY:
+                      client = OpenAI(api_key=OPENAI_API_KEY)
+
+                    prompt = f"""You are a legal judge AI. Analyze the case with these headings:
 ## Summary:
 ## Timeline:
-## Applicable Laws:
-## Legal Gaps:
+## Laws:
+## Gaps:
 ## Outcome:
 ## Ethical Insight:
 ## Recommendation:
-## Suggested Jail Time:
+## Jail Time
 Case Details:
 {case_text}
 """
-                    resp = client.chat.completions.create(
-                        model="gpt-4",
+                    response = client.chat.completions.create(
+                        model="gpt-4"
                         messages=[
-                            {"role": "system", "content": "You are a legal expert."},
+                            {"role": "system", "content": "You are a legal AI."},
                             {"role": "user", "content": prompt}
                         ]
                     )
-                    analysis = resp.choices[0].message.content
+                    analysis = response.choices[0].message.content
                     st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
 
-                except Exception as e:
-                    st.error("❌ Analysis failed")
-                    st.code(str(e))
-    else:
-        st.info("Provide case details via text or upload to analyze.")
+                    if st.button("▶️ Listen to Analysis"):
+                        speak_text(analysis)
 
+                except Exception as e:
+                    st.error("❌ AI analysis failed")
+                    st.code(str(e))
