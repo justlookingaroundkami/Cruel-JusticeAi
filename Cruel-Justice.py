@@ -509,51 +509,70 @@ elif selected_page == "🤖 AI Case Generator":
 from openai import OpenAI
 
 # Ask user for API key (only once at the top of your file or sidebar)
-OPENAI_API_KEY = st.text_input("🔑 Enter your OpenAI API Key", type="password")
+if "OPENAI_API_KEY" not in st.session_state:
+    st.session_state.OPENAI_API_KEY = ""
 
-if OPENAI_API_KEY:
-    client = OpenAI(api_key=OPENAI_API_KEY)
+user_key = st.sidebar.text_input(
+    "🔑 OpenAI API Key",
+    type="password",
+    value=st.session_state.OPENAI_API_KEY,
+    key="input_key",
+)
 
+if user_key:
+    st.session_state.OPENAI_API_KEY = user_key
+    client = OpenAI(api_key=user_key)
+else:
+    client = None
+
+# Sidebar navigation
+navigation = st.sidebar.radio("Navigate to", ["🏠 Home", "🤖 AI Case Generator"], key="nav")
+
+if navigation == "🤖 AI Case Generator":
     st.header("🤖 AI Case Analyzer")
-    st.markdown("Paste or upload a case summary. AI will analyze it.")
+    if not client:
+        st.warning("Please enter your OpenAI API key above to continue.")
+        st.stop()  # Prevent further code from running without valid key
 
-    input_method = st.radio("Choose input:", ["Text", "Upload File"])
+    # 2️⃣ Now input and analyze logic stays in one block
+    input_method = st.radio("Input type", ["Text", "File"], key="ai_input_method")
     case_text = ""
-
     if input_method == "Text":
-        case_text = st.text_area("Paste case details here:")
+        case_text = st.text_area("Paste your case summary here")
     else:
-        uploaded = st.file_uploader("Upload .txt file", type="txt")
+        uploaded = st.file_uploader("Upload a .txt file", type="txt")
         if uploaded:
             case_text = uploaded.read().decode("utf-8")
 
     if case_text:
-        if st.button("🔍 Analyze Case"):
+        if st.button("🔍 Analyze Case", key="analyze_button"):
             with st.spinner("Analyzing..."):
                 try:
-                    prompt = f"""You are a legal AI. Analyze this case with the following headers:
+                    prompt = f"""You are a legal AI. Provide output under these headings:
 ## Summary:
 ## Timeline:
-## Laws:
-## Gaps:
+## Applicable Laws:
+## Legal Gaps:
 ## Outcome:
 ## Ethical Insight:
 ## Recommendation:
-## Jail Time:
+## Suggested Jail Time:
 Case Details:
 {case_text}
 """
-                    response = client.chat.completions.create(
+                    resp = client.chat.completions.create(
                         model="gpt-4",
                         messages=[
-                            {"role": "system", "content": "You are a legal expert AI."},
+                            {"role": "system", "content": "You are a legal expert."},
                             {"role": "user", "content": prompt}
                         ]
                     )
-                    analysis = response.choices[0].message.content
+                    analysis = resp.choices[0].message.content
                     st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
+
                 except Exception as e:
-                    st.error("❌ AI analysis failed")
+                    st.error("❌ Analysis failed")
                     st.code(str(e))
-else:
-    st.warning("Please enter your OpenAI API Key above.")
+    else:
+        st.info("Provide case details via text or upload to analyze.")
+
