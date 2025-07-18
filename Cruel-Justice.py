@@ -147,9 +147,9 @@ st.markdown("""
 <div class="crime-scene-banner" onmousemove="moveSpot(event)">
   <div class="police-tape"></div>
   <img class="blood-splatter splatter1"
-       src="https://i.imgur.com/9o0D1ty.png">
+       src="https://static.vecteezy.com/system/resources/previews/033/172/459/original/blood-splatter-isolated-background-free-png.png">
   <img class="blood-splatter splatter2"
-       src="https://i.imgur.com/p2P70qT.png">
+      src="https://static.vecteezy.com/system/resources/previews/033/172/459/original/blood-splatter-isolated-background-free-png.png">
   <div id="flashlight" class="flashlight"></div>
   <div class="crime-scene-content">
     <img src="https://judgeai.cloud/images/homepage_2.webp"
