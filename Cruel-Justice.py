@@ -408,51 +408,100 @@ if selected_page == "📂 Explore Famous Cases":
             speak_text(case_data['ai_opinion'])
 elif selected_page == "🎭 Imaginary Case Creator":
     st.header("🎭 Build a Hypothetical Case")
-    st.markdown("Fill in the crime profile to simulate an imaginary criminal case:")
+    st.markdown("Enter the crime profile and receive a full case report:")
+
+    case_data = None  # placeholder to use later outside form
 
     with st.form("imaginary_form"):
         col1, col2 = st.columns(2)
         with col1:
-            age = st.selectbox("Age Group", ["Under 18", "18-30", "31-50", "51+"])
+            case_name = st.text_input("Case Name", placeholder="E.g. The Red Garden Mystery")
+            age = st.selectbox("Age Group", ["Under 18", "18–30", "31–50", "51+"])
             gender = st.selectbox("Gender", ["Male", "Female", "Non-binary"])
             country = st.selectbox("Country", ["India", "USA", "UK", "Other"])
         with col2:
             crime = st.selectbox("Crime Type", ["Murder", "Fraud", "Assault", "Cybercrime", "Corruption"])
-            motive = st.text_area("Suspected Motive")
-            evidence = st.text_area("Key Evidence")
+            motive = st.text_area("Suspected Motive", max_chars=200)
+            evidence = st.text_area("Key Evidence", max_chars=200)
 
-        submitted = st.form_submit_button("🧠 Generate Timeline")
-        if submitted:
-            st.subheader("🕒 Generated Case Timeline")
-            st.markdown("<ul class='timeline-container'>", unsafe_allow_html=True)
-            st.markdown(f"""
-                <li class='timeline-item'>
-                    <div class='timeline-item-content'>
-                        <strong>Event 1:</strong> Incident reported involving a {age} {gender} in {country}.
-                    </div>
-                </li>
-                <li class='timeline-item'>
-                    <div class='timeline-item-content'>
-                        <strong>Event 2:</strong> Primary charge identified as <strong>{crime}</strong>.
-                    </div>
-                </li>
-                <li class='timeline-item'>
-                    <div class='timeline-item-content'>
-                        <strong>Event 3:</strong> Suspected motive: <em>{motive or 'Unknown'}</em>.
-                    </div>
-                </li>
-                <li class='timeline-item'>
-                    <div class='timeline-item-content'>
-                        <strong>Event 4:</strong> Key evidence submitted: <em>{evidence or 'Undisclosed'}</em>.
-                    </div>
-                </li>
-                <li class='timeline-item'>
-                    <div class='timeline-item-content'>
-                        <strong>Event 5:</strong> Case under forensic/legal review.
-                    </div>
-                </li>
-            """, unsafe_allow_html=True)
-            st.markdown("</ul>", unsafe_allow_html=True)
+        submitted = st.form_submit_button("🧠 Generate Case Report")
+
+    if submitted:
+        base = {"Murder": 20, "Fraud": 10, "Assault": 8, "Cybercrime": 12, "Corruption": 15}
+        est = base.get(crime, 10)
+        est_text = f"Estimated prison sentence: **~{est} years**"
+
+        timeline = [
+            f"**Event 1:** In {country}, a {age.lower()} {gender.lower()} was suspected of committing {crime.lower()} following unusual activity noticed by authorities.",
+            f"**Event 2:** The crime was officially classified as **{crime}** based on preliminary investigations and evidence.",
+            f"**Event 3:** Suspected motive identified: *{motive or 'Unknown'}*. Investigators suspect psychological, financial, or ideological factors.",
+            f"**Event 4:** Key evidence submitted includes: *{evidence or 'No details disclosed'}*. Investigators began forensic analysis.",
+            f"**Event 5:** The case proceeded to pre-trial where charges were formally framed, drawing attention due to its nature.",
+            f"**Event 6:** Prosecution began collecting testimonies and expert statements to build a strong case."
+        ]
+
+        law_map = {
+            "Murder": "IPC Section 302 (Murder)",
+            "Fraud": "IPC Section 420 (Cheating & dishonesty)",
+            "Assault": "IPC Section 351 (Assault)",
+            "Cybercrime": "IPC Section 66 (Computer Fraud)",
+            "Corruption": "IPC Section 7 (Corruption under PC Act)"
+        }
+
+        summary = (
+            f"This hypothetical case revolves around a {age} {gender} from {country}, "
+            f"accused of {crime.lower()}. With {motive or 'undisclosed'} motives and evidence "
+            f"like {evidence or 'unavailable materials'}, the authorities launched a full-scale investigation."
+        )
+
+        opinion = (
+            f"This case reflects good adherence to early investigative standards. "
+            f"However, motive clarity and unbiased handling will be key in ensuring justice is achieved."
+        )
+
+        # Save case report in a variable so we can use after form
+        case_data = {
+            "name": case_name or "Unnamed Case",
+            "timeline": timeline,
+            "summary": summary,
+            "verdict": f"Defendant found guilty of {crime.lower()}",
+            "real_outcome": est_text,
+            "laws": law_map.get(crime, "TBD by Jurisdiction"),
+            "ai_opinion": opinion
+        }
+
+    # Display Output (outside form)
+    if case_data:
+        st.markdown(f"### 🧾 {case_data['name']}")
+        st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### 🕒 Timeline")
+            html = "<ul class='timeline-container'>"
+            for e in case_data["timeline"]:
+                html += f"<li class='timeline-item'><div class='timeline-item-content'>{e}</div></li>"
+            html += "</ul><hr>"
+            st.markdown(html, unsafe_allow_html=True)
+
+        with c2:
+            st.markdown("#### 📋 Summary")
+            st.markdown(f"<div class='glass-container'>{case_data['summary']}</div>", unsafe_allow_html=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            st.markdown("#### ⚖️ Verdict")
+            st.success(case_data["verdict"])
+            st.markdown("#### 📌 Real Outcome")
+            st.info(case_data["real_outcome"])
+            st.markdown("<hr>", unsafe_allow_html=True)
+
+        st.markdown("#### 📜 Applicable Laws")
+        st.markdown(f"<div class='glass-container'><strong>{case_data['laws']}</strong></div>", unsafe_allow_html=True)
+
+        st.markdown("#### 🧠 AI Opinion")
+        st.markdown(f"<div class='glass-container'><strong>AI Ethical Insight:</strong><br>{case_data['ai_opinion']}</div>", unsafe_allow_html=True)
+
+        if st.button("▶️ Play AI Opinion Audio", key="play_ai_op"):
+            speak_text(case_data["ai_opinion"])
+
 # -------------------- PAGE: AI GENERATOR --------------------
 elif selected_page == "🤖 AI Case Generator":
     st.header("🤖 AI Case Analyzer")
@@ -494,4 +543,3 @@ Case Details:
                     st.code(str(e))
     elif not OPENAI_API_KEY:
         st.warning("Please enter your OpenAI API Key in the sidebar.")  
-        st.markdown("</div>", unsafe_allow_html=True)
