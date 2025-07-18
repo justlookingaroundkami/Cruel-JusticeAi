@@ -1,356 +1,497 @@
 import streamlit as st
-from streamlit_lottie import st_lottie
-import json
-import requests
 import base64
-from gtts import gTTS
 from tempfile import NamedTemporaryFile
-import google.generativeai as genai
+from gtts import gTTS
+import openai as OPENAI 
 
-# --- APP CONFIG AND THEME ---
-st.set_page_config(page_title="Cruel Justice - Advanced Analysis", layout="wide")
+st.set_page_config(page_title="Cruel Justice", layout="wide")
 
-
-# --- TTS FUNCTION ---
 def speak_text(text):
     try:
         tts = gTTS(text)
         with NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
             tts.save(fp.name)
-            with open(fp.name, "rb") as f:
-                audio_bytes = f.read()
-            b64 = base64.b64encode(audio_bytes).decode()
-            audio_html = f"""
-                <audio controls autoplay>
-                    <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
-                </audio>
-            """
-            st.markdown(audio_html, unsafe_allow_html=True)
+        audio_bytes = open(fp.name, "rb").read()
+        b64 = base64.b64encode(audio_bytes).decode()
+        st.markdown(f"""<audio controls autoplay>
+                           <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
+                        </audio>""",
+                    unsafe_allow_html=True)
     except Exception as e:
-        st.warning(f"Audio failed to play: {e}")
+        st.warning(f"Audio play failed: {e}")
 
 
-# --- ADVANCED UI STYLES ---
+def set_page_style(css):
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
+
+# --- GLOBAL STYLES (including glass, timeline, crime banner) ---
 st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
+      rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+    body, .stApp {
+        background: #111; color: #eee;
+        font-family: 'Roboto', sans-serif;
+    }
+    .stSidebar > div {
+        background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 100%);
+        backdrop-filter: blur(10px); border-right:1px solid rgba(0,0,0,0.1); color:#333;
+    }
+    .stSidebar h1, .stSidebar h2 {
+        color: #0f172a !important;
+    }
+    .stSidebar .stRadio label span { color: #333 !important; }
 
-body, .stApp {
-    background: linear-gradient(110deg, #0f172a 60%, #1e3a8a 100%);
-    color: #FFFFFF; /* Made main text pure white */
-    font-family: 'Roboto', sans-serif;
-}
+    .crime-scene-banner {
+        position: relative;
+        background: url('https://images.unsplash.com/photo-1589385554083-91d4e1a1f09f?...') center/cover no-repeat;
+        height: 340px; border-radius: 12px; overflow: hidden;
+        margin: 2em 0;
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 6px 30px rgba(0,0,0,0.9);
+    }
+    .crime-scene-banner::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(circle at center, rgba(0,0,0,0.4), rgba(0,0,0,0.9));
+    }
+    .flashlight {
+        position: absolute; pointer-events: none;
+        width:250px; height:250px;
+        background: radial-gradient(circle at center, rgba(0,0,0,0), rgba(0,0,0,0.85) 60%);
+        border-radius:50%; mix-blend-mode: destination-out;
+        opacity:0.95; transition: transform 0.1s;
+    }
+    .crime-scene-content {
+        position: relative; display: flex; align-items: center;
+        gap: 1.5em; height: 100%; padding:1em 3em;
+    }
+    .crime-scene-content img {
+        width: 140px; border: 4px solid #facc15;
+        border-radius: 12px;
+        box-shadow: 0 0 40px crimson;
+        filter: brightness(1.3);
+        transform: rotate(-2deg);
+        transition: transform 0.2s;
+    }
+    .crime-scene-content img:hover {
+        transform: rotate(0deg) scale(1.1);
+    }
+    .hero-text h1 {
+        font-family: 'VT323', monospace; font-size: 5em;
+        color: #ff4c4c; margin: 0;
+        text-shadow: 4px 4px #220000;
+        filter: brightness(1.4);
+    }
+    .hero-text p {
+        font-size:1.4em; color:#f1f5f9; filter: brightness(1.2);
+        margin-top:0.3em;
+    }
+    .police-tape {
+        position:absolute; top:23%; left:-18%;
+        width:160%; height:50px;
+        background: repeating-linear-gradient(-45deg,
+            #facc15,#facc15 20px,#000 20px,#000 40px);
+        opacity:0.88;
+        transform: rotate(-10deg);
+        box-shadow: 0 0 14px rgba(0,0,0,0.7);
+    }
+    .blood-splatter {
+        position:absolute; opacity:0.9;
+    }
+    .splatter1 { bottom:-20px; right:-40px; width:220px; transform:rotate(-15deg); }
+    .splatter2 { top:30px; left:10px; width:180px; transform:rotate(25deg); }
 
-.stSidebar > div {
-    /* White Gradient Sidebar */
-    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.95) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); /* For Safari support */
-    border-right: 1px solid rgba(0, 0, 0, 0.1); /* Adjusted border for light background */
-    color: #333333; /* Ensure text in sidebar is readable on white */
-}
+    .header-box h1 {
+        font-size: 3.5em; color: #facc15; letter-spacing: 2px;
+        text-align:center; padding:1em 0;
+    }
 
-/* Ensure header and radio button text in sidebar is readable */
-.stSidebar h1, .stSidebar h2, .stSidebar h3, .stSidebar h4, .stSidebar h5, .stSidebar h6 {
-    color: #0f172a !important; /* Darker color for headers in white sidebar */
-}
-.stSidebar .stRadio div label span { /* Target radio button labels */
-    color: #333333 !important;
-}
+    .glass-container {
+        background: rgba(30,41,59,0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 1.5em;
+        border:1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+        margin-bottom:1em;
+    }
 
-
-h1, h2, h3, h4, h5, h6 {
-    color: #facc15 !important; /* Kept main headings yellow for contrast */
-    font-weight: 700;
-}
-
-.stRadio > div {
-    background-color: rgba(30, 41, 59, 0.5);
-    padding: 1em;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.glass-container {
-    background: rgba(30, 41, 59, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 1.5em;
-    border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    margin-bottom: 1em;
-}
-
-.content-box {
-    padding: 1.5em;
-}
-
-.header-box {
-    text-align: center;
-    padding-top: 2em;
-    padding-bottom: 1em;
-}
-
-.header-box h1 {
-    font-size: 3.5em;
-    font-weight: 700;
-    letter-spacing: 2px;
-}
-
-/* --- Professional Timeline CSS --- */
-.timeline-container {
-    border-left: 3px solid #38bdf8;
-    padding: 1em 2em;
-    position: relative;
-    list-style: none;
-}
-
-.timeline-item {
-    margin-bottom: 2em;
-    position: relative;
-}
-
-.timeline-item:before {
-    content: '';
-    background-color: #facc15;
-    border: 3px solid #38bdf8;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    position: absolute;
-    left: -33px;
-    top: 0;
-}
-
-.timeline-item-content {
-    color: #FFFFFF; /* Made timeline content text pure white */
-    background: rgba(45, 55, 72, 0.7);
-    padding: 1em;
-    border-radius: 8px;
-}
-
-.timeline-item-content strong {
-    color: #facc15;
-    font-weight: 700;
-}
-
+    .timeline-container {
+        border-left: 3px solid #38bdf8;
+        padding: 1em 2em; position: relative; list-style: none;
+    }
+    .timeline-item {
+        margin-bottom: 2em; position: relative;
+    }
+    .timeline-item:before {
+        content: '';
+        background-color: #facc15;
+        border: 3px solid #38bdf8;
+        border-radius: 50%;
+        width:20px; height:20px;
+        position: absolute; left: -33px; top: 0;
+    }
+    .timeline-item-content {
+        background: rgba(45,55,72,0.7);
+        color:#fff;
+        padding:1em;
+        border-radius:8px;
+    }
+    .timeline-item-content strong {
+        color:#facc15; font-weight:700;
+    }
 </style>
+
+<div class="crime-scene-banner" onmousemove="moveSpot(event)">
+  <div class="police-tape"></div>
+  <img class="blood-splatter splatter1"
+       src="https://i.imgur.com/9o0D1ty.png">
+  <img class="blood-splatter splatter2"
+       src="https://i.imgur.com/p2P70qT.png">
+  <div id="flashlight" class="flashlight"></div>
+  <div class="crime-scene-content">
+    <img src="https://judgeai.cloud/images/homepage_2.webp"
+         alt="Cruel Justice Logo">
+    <div class="hero-text">
+      <h1>Cruel Justice</h1>
+      <p>Uncover the Truth. Judge the Invisible.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const f = document.getElementById('flashlight');
+function moveSpot(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    f.style.transform = `translate(${e.clientX-rect.left-125}px, ${e.clientY-rect.top-125}px)`;
+}
+</script>
+
+<audio autoplay loop hidden>
+  <source src="https://cdn.pixabay.com/audio/2023/03/04/audio_2d93c0c328.mp3"
+          type="audio/mpeg">
+</audio>
 """, unsafe_allow_html=True)
 
-
-# --- SIDEBAR ---
+# Sidebar (OpenAI key + navigation)
 with st.sidebar:
     st.header("🔐 API Setup")
-    GOOGLE_API_KEY = st.text_input("Enter Gemini API Key", type="password")
-    if GOOGLE_API_KEY:
-        genai.configure(api_key=GOOGLE_API_KEY)
+    OPENAI_API_KEY = st.text_input("Enter OpenAI API Key", type="password")
+    if OPENAI_API_KEY:
+        OPENAI.api_key = OPENAI_API_KEY
 
     st.header("🧭 Navigation")
-    mode = st.radio("Choose Mode:", ["Explore Famous Cases", "AI Case Generator"])
+    selected_page= st.radio("Choose Mode:", 
+                   ["🏠 Home", "📂 Explore Famous Cases",
+                    "🎭 Imaginary Case Creator",
+                    "🤖 AI Case Generator"],
+                   key="nav_mode")
+    if selected_page == "🏠 Home":
+        st.title("🏠 Home")
 
+    elif selected_page == "📂 Explore Famous Cases":
+        st.title("📂 Famous Cases")
 
-with st.container():
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.image("https://judgeai.cloud/images/homepage_2.webp", width=125)
-    with col2:
-        st.markdown("""
-        <div class="header-box">
-            <h1>Cruel Justice</h1>
-        </div>
-        """, unsafe_allow_html=True)
+    elif selected_page == "🎭 Imaginary Case Creator":
+        st.title("🎭 Imaginary Case Creator")
 
-# ------------------ FAMOUS CASES MODE ------------------
-if mode == "Explore Famous Cases":
-    st.header("📁 Select a Famous Criminal Case")
-    case_option = st.selectbox("Choose a case:", [
-        "Aarushi Talwar Case",
-    "Bhima Koregaon Case",
-    "George Floyd Case",
-    "Jessica Lal Murder Case",
-    "Adnan Syed Case"
-    ], label_visibility="collapsed")
+    elif selected_page == "🤖 AI Case Generator":
+        st.title("🤖 AI Case Generator")
 
-    case_data = {} # This will be populated based on selection
+def set_page_style(css: str):
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+def set_page_background(page: str):
+    if selected_page == "🏠 Home":
+        set_page_style("""
+        .stApp {
+            background: radial-gradient(circle, #0a0a0a 0%, #2c2c2c 100%) !important;
+            color: #f1f5f9 !important;
+        }
+        h1, h2, h3, h4, h5 {
+            color: #facc15 !important;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .glass-container {
+            background: rgba(30, 30, 30, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5em;
+            backdrop-filter: blur(10px);
+        }
+        """)
 
-    # --- CASE DATA DICTIONARY ---
-    cases = { 
-          "Aarushi Talwar Case": {
-    "name": "Aarushi Talwar Case",
-    "timeline": [
-           "<strong>2008 (May 16):</strong> 14-year-old Aarushi Talwar found murdered in her bedroom in Noida, India.",
-           "<strong>2008 (May 17):</strong> Family's domestic helper, Hemraj, initially the prime suspect, is found dead on the terrace.",
-           "<strong>2013 (November):</strong> Parents, Rajesh and Nupur Talwar, are convicted for the double murder by a trial court and sentenced to life imprisonment.",
-           "<strong>2017 (October):</strong> The Allahabad High Court acquits the parents, citing lack of conclusive 'irresistible' evidence."
-    ],
-    "summary": "The unsolved double murder of 14-year-old Aarushi Talwar and her family's domestic helper, Hemraj Banjade. The case was marred by a botched initial investigation, multiple changes in investigation teams (from local police to CBI), and intense media sensationalism, leading to the parents' conviction and subsequent acquittal.",
-    "verdict": "Parents initially convicted to life imprisonment, but later acquitted by the High Court due to insufficient evidence.",
-    "laws": "IPC Section 302 (Murder), IPC Section 201 (Destruction of evidence), IPC Section 34 (Acts done by several persons in furtherance of common intention)",
-    "real_outcome": "The parents were acquitted, but the 'benefit of doubt' verdict meant the murders remain officially unsolved, leaving a cloud of mystery and public debate.",
-    "ai_opinion": "This case exposed significant systemic flaws in forensic investigation, crime scene management, and the detrimental influence of a 'media trial'. AI emphasizes the critical need for meticulous, unbiased police work, free from external pressures, to ensure justice is not compromised by procedural failures."
-},
-    "Bhima Koregaon Case": {
-        "name": "Bhima Koregaon Arrests",
-        "timeline": [
-            "<strong>2018 (January 1):</strong> Violence erupts during the annual commemoration of the 1818 Bhima Koregaon battle.",
-            "<strong>2018 (June-August):</strong> Activists and intellectuals are arrested under the Unlawful Activities (Prevention) Act (UAPA).",
-            "<strong>2019-2023:</strong> Multiple accused, including academics and lawyers, remain in jail for years without formal trial.",
-            "<strong>2022:</strong> Accused Stan Swamy dies in custody due to lack of medical care.",
-            "<strong>2023-2024:</strong> Courts begin to grant bail citing lack of strong evidence."
-        ],
-        "summary": "Several activists were accused of plotting to overthrow the Indian government, allegedly linked to Maoist groups. However, investigations and independent reports raised questions about the authenticity of digital evidence and political motivations behind the arrests.",
-        "verdict": "No final verdict. Most of the accused spent years in jail under trial without conviction.",
-        "laws": "UAPA (Unlawful Activities Prevention Act), IPC Sections 124A (Sedition), 120B (Criminal Conspiracy)",
-        "real_outcome": "The case is still under trial, but it has raised serious concerns about misuse of anti-terror laws to suppress dissent.",
-        "ai_opinion": "This case reflects how broad and vague anti-terror laws can be weaponized to silence critics. The prolonged pre-trial detention without clear evidence undermines constitutional rights and the presumption of innocence."
-    },
-
-    "George Floyd Case": {
-        "name": "George Floyd Murder and Trial of Derek Chauvin",
-        "timeline": [
-            "<strong>2020 (May 25):</strong> George Floyd, an unarmed Black man, is killed by police officer Derek Chauvin in Minneapolis.",
-            "<strong>2020 (May-June):</strong> Protests erupt across the US and globally under the #BlackLivesMatter movement.",
-            "<strong>2021 (April):</strong> Chauvin is found guilty of murder and manslaughter.",
-            "<strong>2021 (June):</strong> Chauvin sentenced to 22.5 years in prison."
-        ],
-        "summary": "The killing of George Floyd highlighted systemic racism and police brutality in the United States. Though Chauvin was eventually convicted, the incident drew attention to decades of racially biased policing practices.",
-        "verdict": "Chauvin was convicted on all counts, including second-degree unintentional murder.",
-        "laws": "US Code Title 18: Civil Rights Violations, Second-Degree Murder (Minnesota)",
-        "real_outcome": "The case led to some police reform discussions and global protests, though many argue deeper change is still needed.",
-        "ai_opinion": "While justice was served in this individual case, it exposed systemic racial inequality within law enforcement. True justice would require systemic change, not just convictions in high-profile cases."
-    },
-
-    "Jessica Lal Murder Case": {
-        "name": "Jessica Lal Murder Case",
-        "timeline": [
-            "<strong>1999 (April):</strong> Jessica Lal is shot dead at a party in Delhi by Manu Sharma, son of a powerful politician.",
-            "<strong>2006:</strong> After public outcry and media campaigns, the Delhi High Court reverses the initial acquittal and convicts Sharma.",
-            "<strong>2010:</strong> Supreme Court upholds conviction. Sharma is sentenced to life imprisonment.",
-            "<strong>2020:</strong> Sharma is released early citing “good behavior.”"
-        ],
-        "summary": "The murder of model Jessica Lal in front of dozens of witnesses initially resulted in acquittal due to witnesses turning hostile. A media campaign helped reopen the case. Bias from power, privilege, and money was evident.",
-        "verdict": "Eventually convicted and sentenced to life imprisonment after retrial.",
-        "laws": "IPC Section 302 (Murder), IPC Section 201 (Destruction of Evidence)",
-        "real_outcome": "Sharma was released in 2020 after serving part of his life sentence. The case exposed how power and political connections can influence early investigations and court outcomes.",
-        "ai_opinion": "The initial acquittal exposed how wealth and political power can obstruct justice. While later public pressure helped correct it, justice shouldn't require media intervention."
-    },
-
-    "Adnan Syed Case": {
-        "name": "Adnan Syed / Serial Podcast Case",
-        "timeline": [
-            "<strong>1999:</strong> Hae Min Lee is found murdered in Baltimore. Her ex-boyfriend Adnan Syed is arrested.",
-            "<strong>2000:</strong> Syed is convicted based on a single witness and inconsistent phone records.",
-            "<strong>2014:</strong> Case gains attention through the hit podcast *Serial*.",
-            "<strong>2016-2022:</strong> Multiple appeals are filed citing ineffective legal counsel and unreliable evidence.",
-            "<strong>2022:</strong> Conviction is vacated. Syed is released from prison after 23 years."
-        ],
-        "summary": "Adnan Syed was convicted largely on circumstantial evidence. Years later, investigations revealed poor defense representation and weak forensic evidence. Media attention helped reopen the case.",
-        "verdict": "Conviction vacated in 2022 due to prosecutorial issues and unreliable evidence.",
-        "laws": "Maryland Criminal Code: First-degree murder, obstruction of justice",
-        "real_outcome": "Syed’s release reignited conversations about wrongful convictions and the power of media in justice.",
-        "ai_opinion": "This case exemplifies how procedural failures and poor legal defense can result in wrongful imprisonment. Media can be a double-edged sword—sometimes correcting injustice, other times distorting perception."
+    elif selected_page == "📂 Explore Famous Cases":
+     set_page_style("""
+    .stApp {
+        background: radial-gradient(circle, #2d0000 0%, #000000 100%) !important;
+        color: #f1f5f9 !important;
     }
-}
-    case_data = cases.get(case_option) # Safely get the selected case data
+    h1, h2, h3, h4, h5 {
+        color: #ff4c4c !important;
+        text-shadow: 1px 1px 2px #000;
+    }
+    .glass-container {
+        background: rgba(60, 10, 10, 0.65);
+        border: 1px solid rgba(255, 0, 0, 0.4);
+        border-radius: 12px;
+        padding: 1.5em;
+        backdrop-filter: blur(12px);
+    }
+    .timeline-container {
+        border-left: 4px solid crimson;
+    }
+    .timeline-item-content {
+        background: rgba(90, 0, 0, 0.65);
+        color: white;
+    }
+    """)
 
-    # --- DISPLAY STRUCTURED CASE ---
+    elif selected_page == "🎭 Imaginary Case Creator":
+     set_page_style("""
+    .stApp {
+        background: linear-gradient(145deg, #0a0f1a 0%, #1e293b 100%) !important;
+        color: #e0f2fe !important;
+    }
+    h1, h2, h3 {
+        color: #60a5fa !important;
+    }
+    .glass-container {
+        background: rgba(30, 58, 138, 0.3);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+    """)
+
+    elif selected_page == "🤖 AI Case Generator":
+     set_page_style("""
+    .stApp {
+        background: linear-gradient(130deg, #0a0f0a 0%, #1f2937 100%) !important;
+        color: #d1fae5 !important;
+    }
+    h1, h2, h3 {
+        color: #34d399 !important;
+    }
+    .glass-container {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+        border-radius: 12px;
+        backdrop-filter: blur(8px);
+    }
+    """)
+
+
+set_page_background(selected_page)
+
+# --- PART 2: 📂 Famous Cases Section ---
+
+if selected_page == "📂 Explore Famous Cases":
+    st.header("📁 Select a Famous Criminal Case")
+
+    case_option = st.selectbox(
+        "Choose a case:",
+        [
+            "Aarushi Talwar Case",
+            "Bhima Koregaon Case",
+            "George Floyd Case",
+            "Jessica Lal Murder Case",
+            "Adnan Syed Case"
+        ],
+        label_visibility="collapsed"
+    )
+
+    cases = {
+        "Aarushi Talwar Case": {
+            "name": "Aarushi Talwar Case",
+            "timeline": [
+                "<strong>2008 (May 16):</strong> 14‑year‑old Aarushi Talwar found murdered in her bedroom in Noida, India.",
+                "<strong>2008 (May 17):</strong> The family's domestic helper, Hemraj, initially prime suspect, found dead on the terrace.",
+                "<strong>2013 (Nov):</strong> Parents convicted by trial court; global media storm ensues.",
+                "<strong>2017 (Oct):</strong> Allahabad High Court acquits both citing lack of conclusive evidence."
+            ],
+            "summary": """The unsolved double murder of young Aarushi and the family's helper sparked allegations of sloppy investigation, sensationalist media coverage, and possible police negligence. Investigative lapses and chain-of-custody issues plagued the case, casting doubt on the reliability of evidence.""",
+            "verdict": "Parents initially convicted to life imprisonment, then acquitted.",
+            "laws": "IPC 302 (Murder), IPC 201 (Destruction of Evidence), IPC 34 (Common Intention)",
+            "real_outcome": "Case remains officially unsolved; debate continues.",
+            "ai_opinion": """AI highlights the disastrous combination of media pressure, poor forensic handling and shifting investigation teams. The flawed process undermines evidentiary value.""",
+        },
+        "Bhima Koregaon Case": {
+            "name": "Bhima Koregaon Case",
+            "timeline": [
+                "<strong>2018:</strong> Commemoration event turns violent; arrests begin.",
+                "<strong>2018–2021:</strong> Academics and activists held under UAPA with little trial progress.",
+                "<strong>2022:</strong> Father‑Jesuit activist Stan Swamy dies in custody.",
+                "<strong>2023:</strong> Several release on bail amid judiciary questioning evidence validity."
+            ],
+            "summary": """Activists alleged to have Maoist links were detained under anti-terror laws following a historical event's violence. The prolonged pre-trial incarceration and questionable digital evidence flags misuse of India's stringent statutes.""",
+            "verdict": "Ongoing; no convictions yet, heavy bail rulings.",
+            "laws": "UAPA | IPC 124A (Sedition), 120B (Conspiracy)",
+            "real_outcome": "Highlighted judicial delays and civil liberties concerns.",
+            "ai_opinion": """AI flags misuse of anti-terror provisions against dissent, stressing need for stringent evidence rules and expeditious trials."""
+        },
+        "George Floyd Case": {
+            "name": "George Floyd Case",
+            "timeline": [
+                "<strong>2020:</strong> George Floyd dies under police restraint in Minneapolis.",
+                "<strong>2020–2021:</strong> Protests erupt globally under #BlackLivesMatter.",
+                "<strong>2021:</strong> Derek Chauvin found guilty of murder and sentenced to 22.5 years."
+            ],
+            "summary": """The death of George Floyd under police restraint sparked global outrage and ignited conversations on systemic racism, police reform, and human rights.""",
+            "verdict": "Officer Chauvin convicted on all counts.",
+            "laws": "US Title 18 Civil Rights Violations, Minnesota Murder Statutes",
+            "real_outcome": "Conviction set precedent; systemic reforms remain incomplete.",
+            "ai_opinion": """AI notes that individual verdicts cannot substitute for institutional change—calls for comprehensive policing reform."""
+        },
+        "Jessica Lal Murder Case": {
+            "name": "Jessica Lal Case",
+            "timeline": [
+                "<strong>1999:</strong> Jessica Lal shot dead at a Delhi party by Manu Sharma.",
+                "<strong>2006:</strong> Delhi HC overturns acquittal following public uproar.",
+                "<strong>2010:</strong> SC upholds conviction; Sharma sentenced to life.",
+                "<strong>2020:</strong> Sharma released early on remission."
+            ],
+            "summary": """A high-profile murder of a model where initial acquittal due to witness tampering sparked massive public outrage and media reform campaigns.""",
+            "verdict": "Convicted and later released early.",
+            "laws": "IPC 302 (Murder), 201 (Evidence Tampering)",
+            "real_outcome": "Highlighted power, media role, and judicial integrity.",
+            "ai_opinion": """AI underscores importance of witness protection and transparent judicial processes in politically-tainted cases."""
+        },
+        "Adnan Syed Case": {
+            "name": "Adnan Syed / Serial Podcast Case",
+            "timeline": [
+                "<strong>1999:</strong> Hae Min Lee murdered; Syed convicted largely on circumstantial evidence.",
+                "<strong>2014:</strong> 'Serial' podcast revives interest and scrutiny.",
+                "<strong>2016–2022:</strong> Appeals for ineffective counsel, faulty timelines, unreliable witnesses.",
+                "<strong>2022:</strong> Court vacates conviction; Syed released."
+            ],
+            "summary": """Convicted based on single witness and phone data inconsistencies. Media-driven scrutiny helped uncover gaps in forensic procedures and defense rights.""",
+            "verdict": "Conviction vacated in favor of retrial.",
+            "laws": "Maryland Code – First‑degree Murder, Fifth‑Amendment Rights",
+            "real_outcome": "Raises concerns about wrongful convictions and forensic reliability.",
+            "ai_opinion": """AI emphasizes effective legal representation and evidence review, especially in cases of circumstantial reliance."""
+        }
+    }
+
+    case_data = cases.get(case_option)
     if case_data:
         st.markdown(f"## 🧾 {case_data['name']}")
         st.markdown("---")
 
         col1, col2 = st.columns((1, 1))
-
         with col1:
-            st.markdown("### 🕒 Professional Timeline")
+            st.markdown("### 🕒 Timeline of Events")
             timeline_html = "<ul class='timeline-container'>"
-            for event in case_data["timeline"]:
-                timeline_html += f"<li class='timeline-item'><div class='timeline-item-content'>{event}</div></li>"
+            for ev in case_data["timeline"]:
+                timeline_html += f"<li class='timeline-item'><div class='timeline-item-content'>{ev}</div></li>"
             timeline_html += "</ul>"
             st.markdown(timeline_html, unsafe_allow_html=True)
 
         with col2:
-            st.markdown("### 📋 Case Summary")
+            st.markdown("### 📋 Summary")
             st.markdown(f"<div class='glass-container content-box'>{case_data['summary']}</div>", unsafe_allow_html=True)
-
             st.markdown("### ⚖️ Verdict")
-            st.success(case_data["verdict"])
-
+            st.success(case_data['verdict'])
             st.markdown("### 📌 Real Outcome")
-            st.info(case_data["real_outcome"])
+            st.info(case_data['real_outcome'])
 
         st.markdown("---")
-        st.markdown("### 🧠 AI's Opinion & Analysis")
-        col_ai_1, col_ai_2 = st.columns(2)
-        with col_ai_1:
+        st.markdown("### 🧠 AI’s Insight & Legal Commentary")
+        ai_col1, ai_col2 = st.columns(2)
+        with ai_col1:
             st.markdown(f"<div class='glass-container content-box'><strong>Applicable Laws:</strong><br>{case_data['laws']}</div>", unsafe_allow_html=True)
-        with col_ai_2:
-            st.markdown(f"<div class='glass-container content-box'><strong>AI's Ethical Judgement:</strong><br>{case_data['ai_opinion']}</div>", unsafe_allow_html=True)
+        with ai_col2:
+            st.markdown(f"<div class='glass-container content-box'><strong>AI Opinion:</strong><br>{case_data['ai_opinion']}</div>", unsafe_allow_html=True)
 
         if st.button("▶️ Play AI Opinion Audio"):
-            speak_text(case_data["ai_opinion"])
+            speak_text(case_data['ai_opinion'])
+elif selected_page == "🎭 Imaginary Case Creator":
+    st.header("🎭 Build a Hypothetical Case")
+    st.markdown("Fill in the crime profile to simulate an imaginary criminal case:")
 
+    with st.form("imaginary_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            age = st.selectbox("Age Group", ["Under 18", "18-30", "31-50", "51+"])
+            gender = st.selectbox("Gender", ["Male", "Female", "Non-binary"])
+            country = st.selectbox("Country", ["India", "USA", "UK", "Other"])
+        with col2:
+            crime = st.selectbox("Crime Type", ["Murder", "Fraud", "Assault", "Cybercrime", "Corruption"])
+            motive = st.text_area("Suspected Motive")
+            evidence = st.text_area("Key Evidence")
 
-# ------------------ AI-GENERATED CASE MODE ------------------
-elif mode == "AI Case Generator":
-    st.header("🧠 Generate AI Analysis")
-    st.markdown("---")
+        submitted = st.form_submit_button("🧠 Generate Timeline")
+        if submitted:
+            st.subheader("🕒 Generated Case Timeline")
+            st.markdown("<ul class='timeline-container'>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <li class='timeline-item'>
+                    <div class='timeline-item-content'>
+                        <strong>Event 1:</strong> Incident reported involving a {age} {gender} in {country}.
+                    </div>
+                </li>
+                <li class='timeline-item'>
+                    <div class='timeline-item-content'>
+                        <strong>Event 2:</strong> Primary charge identified as <strong>{crime}</strong>.
+                    </div>
+                </li>
+                <li class='timeline-item'>
+                    <div class='timeline-item-content'>
+                        <strong>Event 3:</strong> Suspected motive: <em>{motive or 'Unknown'}</em>.
+                    </div>
+                </li>
+                <li class='timeline-item'>
+                    <div class='timeline-item-content'>
+                        <strong>Event 4:</strong> Key evidence submitted: <em>{evidence or 'Undisclosed'}</em>.
+                    </div>
+                </li>
+                <li class='timeline-item'>
+                    <div class='timeline-item-content'>
+                        <strong>Event 5:</strong> Case under forensic/legal review.
+                    </div>
+                </li>
+            """, unsafe_allow_html=True)
+            st.markdown("</ul>", unsafe_allow_html=True)
+# -------------------- PAGE: AI GENERATOR --------------------
+elif selected_page == "🤖 AI Case Generator":
+    st.header("🤖 AI Case Analyzer")
+    st.markdown("Paste or upload a case summary. AI will analyze it.")
+    input_method = st.radio("Choose input:", ["Text", "Upload File"], key="ai_method")
+    case_text = ""
+    if input_method == "Text":
+        case_text = st.text_area("Paste case details here:")
+    else:
+        uploaded = st.file_uploader("Upload .txt file", type="txt")
+        if uploaded:
+            case_text = uploaded.read().decode("utf-8")
+    if case_text and OPENAI_API_KEY:
+        if st.button("🔍 Analyze Case"):
+            with st.spinner("Analyzing..."):
+                try:
+                    prompt = f"""You are a legal AI. Respond in markdown:
+## Summary:
+## Timeline:
+## Laws:
+## Gaps:
+## Outcome:
+## Ethical Insight:
+## Recommendation:
 
-    with st.container():
-        st.markdown("<div class='glass-container'>", unsafe_allow_html=True)
-        choice = st.radio("How would you like to input your case?", ["Type a Case Name or Summary", "Upload a Text File"])
-
-        case_text = ""
-        if choice == "Upload a Text File":
-            uploaded = st.file_uploader("Upload a .txt file", type=["txt"], label_visibility="collapsed")
-            if uploaded:
-                case_text = uploaded.read().decode("utf-8")
-        else:
-            typed = st.text_area("Enter Case Name or a brief summary:", height=150, label_visibility="collapsed")
-            if typed:
-                case_text = typed
-
-        if case_text and GOOGLE_API_KEY:
-            if st.button("Analyze with AI"):
-                with st.spinner("Analyzing case using Gemini..."):
-                    try:
-                        model = genai.GenerativeModel("gemini-pro")
-                        prompt = f"""
-                        Analyze this criminal case thoroughly. Provide the following information in a structured, clear, and concise manner, using the exact headings provided below. Ensure all details are relevant to the case you are analyzing.
-
-                        ## Case Summary:
-                        (Provide a brief, factual summary of the case.)
-
-                        ## Timeline of Events:
-                        (List key events in chronological order, e.g., "YYYY: Event description.")
-
-                        ## Applicable Laws:
-                        (List relevant legal statutes or codes. If an Indian case, use Indian Penal Code (IPC) sections. For international cases, specify the jurisdiction's laws. Example: "IPC Section 302 (Murder)" or "US Code Title 18 – Deprivation of rights".)
-
-                        ## Legal Gaps or Misuses:
-                        (Discuss any perceived flaws in the legal process, loopholes, or misapplications of law.)
-
-                        ## Real-life Outcome:
-                        (State the final judgment, sentence, or resolution of the case.)
-
-                        ## Ethical Judgment from an Unbiased AI:
-                        (Offer an unbiased, ethical assessment of the case, focusing on fairness, justice, and societal impact.)
-
-                        ## AI Recommendation:
-                        (Provide constructive recommendations based on the case's handling or outcome, such as improvements to legal procedures or policy changes.)
-
-                        Case: {case_text}
-                        """
-                        response = model.generate_content(prompt)
-                        st.subheader("📖 AI Generated Analysis")
-                        st.markdown("---")
-                        st.markdown(f"<div class='glass-container content-box'>{response.text}</div>", unsafe_allow_html=True)
-                        if st.button("▶️ Play Analysis Audio"):
-                            speak_text(response.text)
-                    except Exception as e:
-                        st.error(f"An error occurred during AI analysis: {e}")
-                        st.warning("Please ensure your Gemini API key is valid and the input is clear.")
-        elif not GOOGLE_API_KEY:
-            st.warning("Please provide your Gemini API key to use AI features.")
-
+Case Details:
+{case_text}
+"""
+                    resp = OPENAI.ChatCompletion.create(
+                        model="gpt-4",
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+                    analysis = resp["choices"][0]["message"]["content"]
+                    st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
+                    if st.button("▶️ Listen to Analysis"):
+                        speak_text(analysis)
+                except Exception as e:
+                    st.error("AI analysis failed")
+                    st.code(str(e))
+    elif not OPENAI_API_KEY:
+        st.warning("Please enter your OpenAI API Key in the sidebar.")  
         st.markdown("</div>", unsafe_allow_html=True)
