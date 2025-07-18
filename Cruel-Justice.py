@@ -522,6 +522,9 @@ elif selected_page == "🤖 AI Case Generator":
         if st.button("🔍 Analyze Case"):
             with st.spinner("Analyzing..."):
                 try:
+                    from openai import OpenAI
+                    client = OpenAI(api_key=OPENAI_API_KEY)
+
                     prompt = f"""You are a legal judge AI. Analyze the case with these headings:
 ## Summary:
 ## Timeline:
@@ -534,18 +537,14 @@ elif selected_page == "🤖 AI Case Generator":
 Case Details:
 {case_text}
 """
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[
-        {"role": "system", "content": "You are a legal AI."},
-        {"role": "user", "content": prompt}
-    ]
-)
-
-analysis = response.choices[0].message.content
-
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are a legal AI."},
+                            {"role": "user", "content": prompt}
+                        ]
+                    )
+                    analysis = response.choices[0].message.content
                     st.markdown(f"<div class='glass-container'>{analysis}</div>", unsafe_allow_html=True)
 
                     if st.button("▶️ Listen to Analysis"):
